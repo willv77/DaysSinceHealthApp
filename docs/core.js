@@ -18,13 +18,13 @@ const STRENGTH = [
 ];
 const MIND = [
   { id: 'yoga', name: 'Isometric Yoga', short: 'Yoga', max: 5 },
-  { id: 'balance', name: 'Balance', short: 'Balance', max: 4 },
-  { id: 'meditation', name: 'Meditation', short: 'Meditation', max: 4 },
-  { id: 'daydream', name: 'Active Imagination', short: 'Active Imagination', max: 4 },
+  { id: 'balance', name: 'Balance', short: 'Balance', max: 5 },
+  { id: 'meditation', name: 'Meditation', short: 'Meditation', max: 5 },
+  { id: 'daydream', name: 'Active Imagination', short: 'Active Imagination', max: 5 },
 ];
-// A log sets the score to the item's max; max 4 items turn yellow one day sooner than max 5 items.
+// A log sets the score to the item's max; a max 4 item would turn yellow one day sooner than a max 5 item.
 const ITEMS = [
-  ...JOINTS.map(j => ({ id: j.id, name: j.name, max: 4, group: 'mob' })),
+  ...JOINTS.map(j => ({ id: j.id, name: j.name, max: 5, group: 'mob' })),
   ...MIND.map(m => ({ ...m, group: 'mind' })),
   ...STRENGTH.map(f => ({ ...f, max: 5, group: 'str' })),
 ];

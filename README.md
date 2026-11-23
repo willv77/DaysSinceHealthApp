@@ -24,7 +24,7 @@ On the Today screen, Yoga & Mind is a 2×2 grid: Yoga and Balance on the left, M
 
 The score is internal and only the colour is shown.
 
-- Logging an item sets it to its **max**: **4** for Mobility joints, Balance, Meditation and Active Imagination; **5** for Isometric Yoga and Strength.
+- Logging an item sets it to its **max**: **5** for Mobility joints, Balance, Meditation and Active Imagination; **5** for Isometric Yoga and Strength.
 - Each midnight it drops by **1**, down to a minimum of 0.
 
 | Score | 4–5 | 3 | 2 | 0–1 |
@@ -33,7 +33,7 @@ The score is internal and only the colour is shown.
 
 | Days since logged | 0 | 1 | 2 | 3 | 4+ |
 |---|---|---|---|---|---|
-| Mobility, Balance, Meditation, Active Imagination | green | yellow | orange | red | red |
+| Mobility, Balance, Meditation, Active Imagination | green | green | yellow | orange | red |
 | Isometric Yoga, Strength | green | green | yellow | orange | red |
 
 ### Notifications (5 AM and 5 PM)

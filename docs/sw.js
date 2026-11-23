@@ -1,5 +1,5 @@
 // Network-first so updates on GitHub Pages show immediately; cache is the offline fallback.
-const CACHE = 'days-since-v8';
+const CACHE = 'days-since-v9';
 const ASSETS = ['./', 'index.html', 'style.css', 'core.js', 'app.js', 'figures.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 

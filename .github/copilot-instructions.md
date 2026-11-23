@@ -8,7 +8,7 @@ Static iPhone web app (PWA) tracking how recently you did mobility, yoga & mind,
 
 ## Rules that must hold
 - Data is local only: `localStorage["daysSince.v1"]` = `{ log: [{k, d, u}], offset, start, notified }`. Scores are always recomputed from `log`. Never store derived scores.
-- Scoring: a log sets the item's `max` (4 for mobility/balance/meditation/imagination, 5 for yoga/strength), then −1 per midnight, min 0. Colours: 4–5 green, 3 yellow, 2 orange, 0–1 red. Scores and day counts are never shown on the Today screen, only colours.
+- Scoring: a log sets the item's `max` (5 for mobility/balance/meditation/imagination, 5 for yoga/strength), then −1 per midnight, min 0. Colours: 4–5 green, 3 yellow, 2 orange, 0–1 red. Scores and day counts are never shown on the Today screen, only colours.
 - One log per item per day. The header undo button is disabled until something is logged today; its popup lists today's logs in log order, and any of them can be undone.
 - Every view must fit an iPhone SE screen (375×667) without scrolling, including the undo popup with every item logged.
 - Day simulation (click the header date) is desktop only (`(hover: hover) and (pointer: fine)`) and never affects real notifications.

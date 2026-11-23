@@ -65,7 +65,7 @@ def test_app_name_fits_header(iphone):
         r.selectNodeContents(t); return r.getBoundingClientRect().width <= t.clientWidth; }""")
 
 
-FAST = ["neck", "ankles", "balance", "meditation", "daydream"]  # max 4
+FAST = ["neck", "ankles", "balance", "meditation", "daydream"]  # max 5
 SLOW = ["yoga", "push", "carry"]  # max 5
 
 
@@ -73,7 +73,7 @@ def test_fast_and_slow_decay(desktop):
     desktop.goto(BASE)
     for item in FAST + SLOW:
         tap(desktop, item)
-    fast = ["yellow", "orange", "red", "red", "red"]  # 3, 2, 1, 0, 0
+    fast = ["green", "yellow", "orange", "red", "red"]  # 4, 3, 2, 1, 0
     slow = ["green", "yellow", "orange", "red", "red"]  # 4, 3, 2, 1, 0
     for i in range(5):
         next_day(desktop)
@@ -81,6 +81,8 @@ def test_fast_and_slow_decay(desktop):
             assert band(desktop, item) == fast[i], (item, f"day +{i + 1}")
         for item in SLOW:
             assert band(desktop, item) == slow[i], (item, f"day +{i + 1}")
+    tap(desktop, "neck")
+    assert band(desktop, "neck") == "green"  # 0 -> max in one tap
     tap(desktop, "neck")
     assert band(desktop, "neck") == "green"  # 0 -> max in one tap
 
@@ -380,17 +382,19 @@ def test_desktop_day_change_previews_notification(desktop):
     for item in ALL:
         tap(desktop, item)
     assert desktop.evaluate("dailySummary(db.log, todayNum()).title") == "🟢 All green"
-    next_day(desktop)  # max-4 items yellow, max-5 items green
-    assert banner(desktop)["Title"] == "🟡 12 turning yellow"
-    assert banner(desktop)["Body"].startswith("Neck, Shoulders")
+    next_day(desktop)  # every item stays green the day after
+    assert banner(desktop)["Title"] == "🟢 All green"
+    tap(desktop, "neck")
+    next_day(desktop)
+    assert banner(desktop)["Title"] == "🟡 18 turning yellow"
+    assert banner(desktop)["Body"].startswith("Shoulders, Elbows")
     next_day(desktop)  # yellows are not mentioned once anything is orange
-    assert banner(desktop)["Title"] == "🟠 12 orange"
+    assert banner(desktop)["Title"] == "🟠 18 orange"
     next_day(desktop)
     b = banner(desktop)
-    assert b["Title"] == "🔴 12 red · 🟠 7 orange"
-    assert b["Body"].split("\n")[0].startswith("Red: Neck, Shoulders")
-    assert "Balance, Meditation" in b["Body"].split("\n")[0]
-    assert b["Body"].split("\n")[1] == "Orange: Isometric Yoga, Push, Pull, Squat, Hinge, Loaded carry, Get-up"
+    assert b["Title"] == "🔴 18 red · 🟠 1 orange"
+    assert b["Body"].split("\n")[0].startswith("Red: Shoulders, Elbows")
+    assert b["Body"].split("\n")[1] == "Orange: Neck"
 
 
 def test_no_notification_preview_on_mobile(iphone):
