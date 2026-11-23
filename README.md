@@ -6,7 +6,7 @@ A small, static web app for iPhone that tracks how recently you've worked on mob
 
 - **Today** tab: tap a joint on the body, a Yoga & Mind panel, or a Strength panel to log it for today.
   - Each item can be logged **once per day**. A check mark shows it's done.
-  - A banner naming what was logged (e.g. **Logged Neck**) with an **Undo** button appears for 5 seconds after each tap.
+- **↶ undo** (header): greyed out until something is logged today. Tap it to see today's logs in the order you made them, and **Undo** any of them.
 - **History** tab: a 4-week colour heatmap per section, filling the screen.
 - **🔔 bell** (header): turn on notifications (see below).
 
@@ -15,14 +15,16 @@ A small, static web app for iPhone that tracks how recently you've worked on mob
 | Section | Items |
 |---|---|
 | Mobility | Neck, Shoulders, Elbows, Wrists, Upper spine, Lower spine, Hips, Knees, Ankles |
-| Yoga & Mind | Isometric Yoga, Meditation, Active Imagination |
+| Yoga & Mind | Isometric Yoga, Balance, Meditation, Active Imagination |
 | Strength | Push, Pull, Squat, Hinge, Loaded carry, Get-up |
+
+On the Today screen, Yoga & Mind is a 2×2 grid: Yoga and Balance on the left, Meditation and Active Imagination on the right.
 
 ### Scoring
 
 The score is internal and only the colour is shown.
 
-- Logging an item sets it to its **max**: **4** for Mobility joints, Meditation and Active Imagination; **5** for Isometric Yoga and Strength.
+- Logging an item sets it to its **max**: **4** for Mobility joints, Balance, Meditation and Active Imagination; **5** for Isometric Yoga and Strength.
 - Each midnight it drops by **1**, down to a minimum of 0.
 
 | Score | 4–5 | 3 | 2 | 0–1 |
@@ -31,7 +33,7 @@ The score is internal and only the colour is shown.
 
 | Days since logged | 0 | 1 | 2 | 3 | 4+ |
 |---|---|---|---|---|---|
-| Mobility, Meditation, Active Imagination | green | yellow | orange | red | red |
+| Mobility, Balance, Meditation, Active Imagination | green | yellow | orange | red | red |
 | Isometric Yoga, Strength | green | green | yellow | orange | red |
 
 ### Notifications (5 AM and 5 PM)
@@ -111,10 +113,10 @@ python -m venv .venv
 Tests serve `docs/` locally and run in Chromium (desktop) and WebKit with iPhone 13 and iPhone SE (3rd gen, 375×667) emulation. They cover:
 
 - scoring, decay and one log per day;
-- undo, persistence and midnight rollover;
+- the undo popup (today's logs in order, undo any), persistence and midnight rollover;
 - the desktop-only simulation and notification preview;
 - 5 AM / 5 PM notification slots and system notifications;
-- the no-scroll layout, PWA assets and offline use.
+- the no-scroll layout (including the undo popup with every item logged), PWA assets and offline use.
 
 If `playwright install` fails with `unable to get local issuer certificate` (corporate TLS inspection), export the Windows trusted certificates and point Node at them:
 

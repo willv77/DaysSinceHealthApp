@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mockup C - Tiles</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #000; color: #f5f5f5; }
+  header { padding: 18px 16px 8px; }
+  header .t { font-size: 30px; font-weight: 800; }
+  header .d { color: #8e8e93; font-size: 14px; }
+  .tile { border-radius: 22px; margin: 0 12px; padding: 12px 16px; display: grid; grid-template-columns: 90px 1fr; align-items: center; gap: 12px; cursor: pointer; border: 2px solid; }
+  .tile .fig { width: 90px; height: 90px; }
+  .tile .nm { font-weight: 700; font-size: 18px; }
+  .tile .u { font-size: 12px; color: #8e8e93; }
+  .hero { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: #8e8e93; text-align: center; }
+  .hero .fig { width: 100%; }
+  .sec { background: #1c1c1e; border-radius: 22px; margin: 10px 12px; padding: 12px; }
+  h2 { margin: 0 0 8px; font-size: 17px; }
+  .mob { display: grid; grid-template-columns: 96px 1fr; gap: 10px; }
+  .body { width: 100%; display: block; cursor: pointer; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; align-content: start; }
+  .chip { border-radius: 14px; padding: 16px 4px; cursor: pointer; text-align: center; color: #0f172a; font-weight: 700; }
+  .chip .nm { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  details summary { font-size: 17px; font-weight: 700; cursor: pointer; }
+  details[open] summary { margin-bottom: 8px; }
+  .chart { width: 100%; display: block; }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translate(-50%, 120px); background: #2c2c2e; color: #fff; border-radius: 999px; padding: 8px 8px 8px 18px; display: flex; gap: 14px; align-items: center; transition: transform .25s; font-size: 15px; white-space: nowrap; box-shadow: 0 6px 24px #000a; }
+  .toast.show { transform: translate(-50%, 0); }
+  .toast button { background: #0a84ff; color: #fff; border: 0; border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: 15px; }
+</style>
+</head>
+<body>
+<header><div class="t">Days Since</div><div class="d">Sunday, November 22</div></header>
+<main id="app"></main>
+<script src="common.js"></script>
+<script>
+function chip(id) {
+  const st = state[id];
+  return `<div class="chip" data-bump="${id}" style="background:${col(st.s)}"><div class="nm">${NAMES[id]}</div></div>`;
+}
+function render() {
+  const y = state.yoga;
+  document.getElementById('app').innerHTML = `
+  <div class="tile" data-bump="yoga" style="border-color:${col(y.s)};background:${col(y.s)}1f">${yogaSVG(col(y.s))}
+    <div><div class="nm">Isometric Yoga</div><div class="u">Tap to log</div></div></div>
+  <div class="sec"><h2>Strength</h2>
+    <div class="mob"><div class="hero">${strengthSVG(col(state[worstStrength().id].s))}Colour = most overdue</div>
+    <div class="grid">${STRENGTH.map(f => chip(f.id)).join('')}</div></div>
+  </div>
+  <div class="sec"><h2>Mobility</h2>
+    <div class="mob"><div>${bodySVG({ sil: '#3a3a3c' })}</div>
+    <div class="grid">${JOINTS.map(j => chip(j.id)).join('')}</div></div>
+  </div>
+  <div class="sec"><h2>Weekly activity</h2>${weeklyBars()}</div>
+  <div class="sec"><details><summary>Days since</summary>${daysList()}</details></div>
+  <div style="height:70px"></div>`;
+}
+render();
+</script>
+</body>
+</html>
