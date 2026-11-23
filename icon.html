@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App icon preview</title>
+<style>
+  body { margin: 0; padding: 20px; background: #d4d8de; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: #0f172a; }
+  .wrap { display: flex; gap: 36px; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+  h2 { font-size: 16px; margin: 0 0 10px; }
+  .opts { display: grid; grid-template-columns: auto repeat(3, auto); gap: 14px 18px; align-items: center; }
+  .opts button { border: 2px solid transparent; background: #fff; border-radius: 12px; padding: 6px 12px; font-weight: 700; font-size: 14px; cursor: pointer; text-align: left; }
+  .opts button.on { border-color: #2563eb; }
+  .opts small { display: block; font-weight: 400; color: #475569; }
+  .ic { display: block; border-radius: 22.37%; overflow: hidden; box-shadow: 0 1px 3px #0003; }
+  .phone { width: 390px; height: 844px; border: 10px solid #111; border-radius: 46px; overflow: hidden; position: relative;
+    background: linear-gradient(160deg, #1e3a8a 0%, #6d28d9 55%, #db2777 100%); color: #fff; }
+  .sb { display: flex; justify-content: space-between; padding: 14px 30px 0; font-weight: 600; font-size: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); row-gap: 22px; padding: 34px 20px 0; }
+  .app { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12px; text-shadow: 0 1px 2px #0006; }
+  .ph { width: 62px; height: 62px; border-radius: 22.37%; display: grid; place-items: center; font-size: 30px; }
+  .dock { position: absolute; left: 12px; right: 12px; bottom: 14px; height: 92px; border-radius: 32px; background: #ffffff40; backdrop-filter: blur(20px);
+    display: grid; grid-template-columns: repeat(4, 1fr); place-items: center; }
+  .search { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); background: #ffffff40; border-radius: 16px; padding: 6px 14px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <h2>Options (180 / 60 / 40 / 29 px)</h2>
+    <div class="opts" id="opts"></div>
+  </div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9646;</span></div>
+    <div class="grid" id="home"></div>
+    <div class="search">&#128269; Search</div>
+    <div class="dock"></div>
+  </div>
+</div>
+<script src="common.js"></script>
+<script>
+const G = COLORS;
+const bg = `<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e293b"/><stop offset="1" stop-color="#0b1018"/></linearGradient></defs>
+  <rect width="180" height="180" fill="url(#bg)"/>`;
+const line = (pts, w, c) => `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+// Full-bleed square art; iOS applies the rounded mask itself.
+const ICONS = {
+  figure: ['Figure', 'Warrior II line figure', () => `${bg}
+    ${line([[90, 64], [90, 112]], 11, G.green)}
+    ${line([[34, 72], [146, 72]], 11, G.green)}
+    ${line([[86, 112], [60, 132], [56, 152]], 11, G.green)}
+    ${line([[94, 112], [116, 134], [134, 152]], 11, G.green)}
+    <circle cx="90" cy="46" r="13" fill="${G.green}"/>
+    ${[G.green, G.yellow, G.orange, G.red].map((c, i) => `<circle cx="${54 + i * 24}" cy="166" r="5" fill="${c}"/>`).join('')}`],
+  dots: ['Status dots', 'The four status colours', () => `${bg}
+    ${[[58, 58, G.green], [122, 58, G.yellow], [58, 122, G.orange], [122, 122, G.red]].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="28" fill="${c}"/>`).join('')}`],
+  body: ['Body joints', 'Mobility figure with coloured joints', () => `${bg}
+    ${line([[90, 64], [90, 116]], 16, '#64748b')}
+    ${line([[90, 70], [62, 100], [52, 128]], 13, '#64748b')}${line([[90, 70], [118, 100], [128, 128]], 13, '#64748b')}
+    ${line([[86, 116], [74, 146], [70, 168]], 14, '#64748b')}${line([[94, 116], [106, 146], [110, 168]], 14, '#64748b')}
+    <circle cx="90" cy="42" r="15" fill="#64748b"/>
+    ${[[90, 64, G.green], [62, 100, G.yellow], [118, 100, G.green], [74, 146, G.orange], [106, 146, G.red]].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="10" fill="${c}" stroke="#0f172a" stroke-width="3"/>`).join('')}`],
+  ring: ['Ring + kettlebell', 'Status ring around a bell', () => {
+    const r = 64, C = 2 * Math.PI * r, seg = C / 4 - 12;
+    return `${bg}
+    ${[G.green, G.yellow, G.orange, G.red].map((c, i) => `<circle cx="90" cy="90" r="${r}" fill="none" stroke="${c}" stroke-width="15" stroke-linecap="round"
+      stroke-dasharray="${seg} ${C}" stroke-dashoffset="${-i * C / 4 - 6}" transform="rotate(-90 90 90)"/>`).join('')}
+    <rect x="72" y="56" width="36" height="30" rx="14" fill="none" stroke="#f8fafc" stroke-width="9"/>
+    <circle cx="90" cy="102" r="26" fill="#f8fafc"/>`;
+  }],
+};
+const svg = (k, size) => `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">${ICONS[k][2]()}</svg>`;
+
+const PH = [['#34c759', '&#128222;', 'Phone'], ['#0a84ff', '&#9993;&#65039;', 'Mail'], ['#fff', '&#128197;', 'Calendar'], ['#ffcc00', '&#128221;', 'Notes'],
+  ['#ff9f0a', '&#128247;', 'Camera'], ['#5e5ce6', '&#127925;', 'Music'], [null, '', 'Days Since'], ['#64d2ff', '&#9925;', 'Weather'],
+  ['#1c1c1e', '&#9200;', 'Clock'], ['#30d158', '&#128506;&#65039;', 'Maps'], ['#ff375f', '&#10084;&#65039;', 'Health'], ['#8e8e93', '&#9881;&#65039;', 'Settings']];
+let pick = 'figure';
+function render() {
+  document.getElementById('opts').innerHTML = Object.entries(ICONS).map(([k, [n, d]]) =>
+    `<button data-k="${k}" class="${k === pick ? 'on' : ''}">${n}<small>${d}</small></button>${svg(k, 180)}<div style="display:flex;gap:14px;align-items:center">${svg(k, 60)}${svg(k, 40)}${svg(k, 29)}</div><span></span>`).join('');
+  document.getElementById('home').innerHTML = PH.map(([c, g, n]) =>
+    `<div class="app">${c ? `<div class="ph" style="background:${c}">${g}</div>` : svg(pick, 62)}<span>${n}</span></div>`).join('');
+  document.querySelector('.dock').innerHTML = PH.slice(0, 4).map(([c, g]) => `<div class="ph" style="background:${c}">${g}</div>`).join('');
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) { pick = b.dataset.k; render(); } });
+if (ICONS[location.hash.slice(1)]) pick = location.hash.slice(1);
+render();
+</script>
+</body>
+</html>

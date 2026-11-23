@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mockup A - Dashboard</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body { height: 100dvh; display: flex; flex-direction: column; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #0f141b; color: #e5e7eb; padding-top: env(safe-area-inset-top); }
+  header { padding: 14px 16px 4px; display: flex; justify-content: space-between; align-items: baseline; }
+  header .t { font-size: 26px; font-weight: 800; }
+  header .d { color: #94a3b8; font-size: 14px; }
+  main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .pane { display: none; flex: 1; min-height: 0; flex-direction: column; padding: 6px 12px 8px; gap: 10px; overflow: auto; scrollbar-width: none; }
+  .pane::-webkit-scrollbar { display: none; }
+  .pane.on { display: flex; }
+  .card { background: #182030; border-radius: 18px; padding: 10px 12px; }
+  h2 { margin: 0 0 6px; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; color: #94a3b8; }
+  .row2 { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+  .row2 .card { display: flex; flex-direction: column; min-height: 0; }
+  .body { flex: 1 1 0; min-height: 0; width: 100%; display: block; cursor: pointer; }
+  .yoga { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; cursor: pointer; border-radius: 14px; padding: 8px; }
+  .yoga .fig { flex: 1 1 0; min-height: 0; width: 100%; }
+  .yoga .l { font-size: 13px; color: #94a3b8; }
+  .sgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .st { border-radius: 14px; padding: 8px 4px 6px; text-align: center; cursor: pointer; border: 2px solid; }
+  .st .fig { width: 100%; height: 62px; }
+  .st .nm { font-size: 12px; font-weight: 600; white-space: nowrap; margin-top: 2px; }
+  h3 { margin: 0 0 6px; padding-bottom: 4px; font-size: 13px; color: #e5e7eb; border-bottom: 1px solid #ffffff1f; }
+  .chart { width: 100%; display: block; }
+  .days { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 16px; }
+  .days h3 { grid-column: 1 / -1; }
+  .days > div { padding: 4px 2px !important; font-size: 14px; }
+  nav { display: grid; grid-template-columns: repeat(3, 1fr); background: #182030; border-top: 1px solid #ffffff14; padding: 6px 0 calc(6px + env(safe-area-inset-bottom)); }
+  nav button { background: none; border: 0; font-size: 11px; color: #94a3b8; display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: inherit; }
+  nav button span { font-size: 22px; filter: grayscale(1); opacity: .7; }
+  nav button.on { color: #60a5fa; font-weight: 700; }
+  nav button.on span { filter: none; opacity: 1; }
+  .toast { position: fixed; left: 12px; right: 12px; bottom: calc(72px + env(safe-area-inset-bottom)); background: #f8fafc; color: #0f172a; border-radius: 14px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; transform: translateY(200px); transition: transform .25s; font-size: 15px; box-shadow: 0 8px 30px #0008; }
+  .toast.show { transform: none; }
+  .toast button { background: #2563eb; color: #fff; border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 700; font-size: 15px; }
+</style>
+</head>
+<body>
+<header><span class="t" id="title">Days Since</span><span class="d">Sun, Nov 22</span></header>
+<main id="app"></main>
+<nav>
+  <button data-tab="today" class="on"><span>&#127968;</span>Today</button>
+  <button data-tab="history"><span>&#128197;</span>History</button>
+  <button data-tab="days"><span>&#9201;&#65039;</span>Days since</button>
+</nav>
+<script src="common.js"></script>
+<script src="poses.js"></script>
+<script>
+let tab = 'today';
+const TITLES = { today: 'Days Since', history: 'Last 4 weeks', days: 'Days since' };
+const tint = id => mix(col(state[id].s), BG, .12);
+function render() {
+  const s = id => state[id];
+  document.getElementById('title').textContent = TITLES[tab];
+  document.getElementById('app').innerHTML = `
+  <div class="pane ${tab === 'today' ? 'on' : ''}">
+    <div class="row2">
+      <section class="card"><h2>Mobility</h2>${bodySVG()}</section>
+      <section class="card"><h2>Yoga</h2>
+        <div class="yoga" data-bump="yoga" style="background:${tint('yoga')}">${poseSVG('yoga', 1, col(s('yoga').s), tint('yoga'))}<div class="l">Tap to log</div></div>
+      </section>
+    </div>
+    <section class="card"><h2>Strength</h2>
+      <div class="sgrid">${STRENGTH.map(f => `<div class="st" data-bump="${f.id}" style="border-color:${col(s(f.id).s)};background:${tint(f.id)}">
+        ${poseSVG(f.id, 1, col(s(f.id).s), tint(f.id))}<div class="nm">${f.name}</div></div>`).join('')}</div>
+    </section>
+  </div>
+  <div class="pane ${tab === 'history' ? 'on' : ''}">
+    ${GROUPS.map(([g, ids]) => `<section class="card"><h3>${g}</h3>${heatmap(28, {}, ids)}</section>`).join('')}
+  </div>
+  <div class="pane ${tab === 'days' ? 'on' : ''}">
+    ${GROUPS.map(([g, ids]) => `<section class="card days"><h3>${g}</h3>${daysList({}, ids)}</section>`).join('')}
+  </div>`;
+}
+document.querySelector('nav').addEventListener('click', e => {
+  const b = e.target.closest('[data-tab]'); if (!b) return;
+  tab = b.dataset.tab;
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  render();
+});
+if (TITLES[location.hash.slice(1)]) document.querySelector(`nav [data-tab="${location.hash.slice(1)}"]`).click();
+render();
+</script>
+</body>
+</html>
