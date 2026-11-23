@@ -7,7 +7,7 @@ from playwright.sync_api import expect
 from conftest import BASE
 
 ALL = ["neck", "shoulders", "elbows", "wrists", "upperSpine", "lowerSpine", "hips", "knees", "ankles",
-       "yoga", "meditation", "daydream", "push", "pull", "squat", "hinge", "carry", "getup"]
+       "yoga", "balance", "meditation", "daydream", "push", "pull", "squat", "hinge", "carry", "getup"]
 MINUTE = 60_000
 
 
@@ -27,6 +27,14 @@ def stored(page):
 def next_day(page, n=1):
     for _ in range(n):
         page.click("#date")
+
+
+def undo_rows(page):
+    return page.locator("#popList li span").all_inner_texts()
+
+
+def undo_item(page, name):
+    page.get_by_role("button", name=f"Undo {name}", exact=True).click()
 
 
 def test_initial_state_is_red_and_nothing_logged(desktop):
@@ -50,12 +58,14 @@ def test_today_tab_shows_colours_only(iphone):
 
 def test_app_name_fits_header(iphone):
     iphone.goto(BASE)
-    assert iphone.title() == "Balance and Wellness"
-    assert iphone.locator("#title").inner_text() == "Balance and Wellness"
-    assert iphone.evaluate("(t => t.scrollWidth <= t.clientWidth)(document.getElementById('title'))")
+    assert iphone.title() == "Wellness"
+    assert iphone.locator("#title").inner_text() == "Wellness"
+    # An ellipsis keeps scrollWidth == clientWidth, so measure the text itself.
+    assert iphone.evaluate("""() => { const t = document.getElementById('title'), r = document.createRange();
+        r.selectNodeContents(t); return r.getBoundingClientRect().width <= t.clientWidth; }""")
 
 
-FAST = ["neck", "ankles", "meditation", "daydream"]  # max 4
+FAST = ["neck", "ankles", "balance", "meditation", "daydream"]  # max 4
 SLOW = ["yoga", "push", "carry"]  # max 5
 
 
@@ -75,21 +85,23 @@ def test_fast_and_slow_decay(desktop):
     assert band(desktop, "neck") == "green"  # 0 -> max in one tap
 
 
-def test_mind_section_layout(iphone):
+def test_mind_section_is_2x2(iphone):
     iphone.goto(BASE)
-    box = {i: iphone.locator(f'button[data-item="{i}"]').bounding_box() for i in ["yoga", "meditation", "daydream"]}
-    y, m, d = box["yoga"], box["meditation"], box["daydream"]
-    assert m["x"] > y["x"] + y["width"] - 1 and d["x"] > y["x"] + y["width"] - 1  # right column
-    assert m["y"] + m["height"] <= d["y"] + 1  # meditation above daydream
-    assert abs(y["y"] - m["y"]) < 2 and abs((y["y"] + y["height"]) - (d["y"] + d["height"])) < 2  # yoga spans both rows
+    box = {i: iphone.locator(f'button[data-item="{i}"]').bounding_box() for i in ["yoga", "meditation", "balance", "daydream"]}
+    y, m, b, d = box["yoga"], box["meditation"], box["balance"], box["daydream"]
+    assert abs(y["x"] - b["x"]) < 2 and abs(m["x"] - d["x"]) < 2 and m["x"] > y["x"] + y["width"] - 1  # body left, mind right
+    assert abs(y["y"] - m["y"]) < 2 and abs(b["y"] - d["y"]) < 2 and b["y"] > y["y"] + y["height"] - 1  # two rows
+    for t in (m, b, d):
+        assert abs(t["width"] - y["width"]) < 2 and abs(t["height"] - y["height"]) < 2
 
 
 def test_mind_panels_log_with_check_mark(desktop):
     desktop.goto(BASE)
     tap(desktop, "meditation")
     tap(desktop, "daydream")
-    assert desktop.locator('button[data-item="meditation"] .done').is_visible()
-    assert desktop.locator('button[data-item="daydream"] .done').is_visible()
+    tap(desktop, "balance")
+    for item in ["meditation", "daydream", "balance"]:
+        assert desktop.locator(f'button[data-item="{item}"] .done').is_visible()
     assert band(desktop, "yoga") == "red"
 
 
@@ -125,6 +137,8 @@ def test_undo_allows_tapping_again_same_day(desktop):
     desktop.goto(BASE)
     tap(desktop, "squat")
     desktop.click("#undo")
+    undo_item(desktop, "Squat")
+    expect(desktop.locator("#sheet")).to_be_hidden()  # closes once nothing is left to undo
     assert desktop.locator('button[data-item="squat"] .done').count() == 0
     tap(desktop, "squat")
     assert band(desktop, "squat") == "green"
@@ -150,17 +164,72 @@ def test_yoga_and_strength_facets_scored_separately(desktop):
     assert band(desktop, "pull") == "red"
 
 
-def test_undo_reverts_last_tap(desktop):
+def test_undo_button_enabled_only_when_something_logged_today(desktop):
     desktop.goto(BASE)
-    tap(desktop, "hinge")
-    tap(desktop, "carry")
-    expect(desktop.locator("#toast")).to_have_class(re.compile(r"\bshow\b"))
-    expect(desktop.locator("#toastMsg")).to_have_text("Logged Loaded carry")
+    expect(desktop.locator("#undo")).to_be_disabled()
+    tap(desktop, "push")
+    expect(desktop.locator("#undo")).to_be_enabled()
+    expect(desktop.locator("#toast")).not_to_have_class(re.compile(r"\bshow\b"))  # no toast when logging
+    desktop.reload()
+    expect(desktop.locator("#undo")).to_be_enabled()  # built from the stored log
+    next_day(desktop)
+    expect(desktop.locator("#undo")).to_be_disabled()
+    tap(desktop, "pull")
     desktop.click("#undo")
-    expect(desktop.locator("#toastMsg")).to_have_text("Undone: Loaded carry")
+    assert undo_rows(desktop) == ["Pull"]  # yesterday's push is not listed
+
+
+def test_undo_popup_lists_todays_logs_in_order_and_undoes_any(desktop):
+    desktop.goto(BASE)
+    for item in ["hinge", "carry", "balance", "neck"]:
+        tap(desktop, item)
+    desktop.click("#undo")
+    expect(desktop.locator("#sheet")).to_be_visible()
+    assert undo_rows(desktop) == ["Hinge", "Loaded carry", "Balance", "Neck"]
+    undo_item(desktop, "Loaded carry")
+    assert undo_rows(desktop) == ["Hinge", "Balance", "Neck"]
     assert band(desktop, "carry") == "red"
     assert band(desktop, "hinge") == "green"
-    assert [e["k"] for e in stored(desktop)["log"]] == ["hinge"]
+    assert [e["k"] for e in stored(desktop)["log"]] == ["hinge", "balance", "neck"]
+    for name in ["Neck", "Hinge", "Balance"]:
+        undo_item(desktop, name)
+    expect(desktop.locator("#sheet")).to_be_hidden()
+    expect(desktop.locator("#undo")).to_be_disabled()
+    assert stored(desktop)["log"] == []
+
+
+def test_undo_popup_closes_without_undoing(desktop):
+    desktop.goto(BASE)
+    tap(desktop, "neck")
+    sheet = desktop.locator("#sheet")
+    desktop.click("#undo")
+    desktop.click("#popClose")
+    expect(sheet).to_be_hidden()
+    desktop.click("#undo")
+    desktop.mouse.click(10, 600)  # backdrop, outside the popup
+    expect(sheet).to_be_hidden()
+    desktop.click("#undo")
+    desktop.keyboard.press("Escape")
+    expect(sheet).to_be_hidden()
+    assert [e["k"] for e in stored(desktop)["log"]] == ["neck"]
+
+
+def test_undo_popup_fits_with_everything_logged(iphone):
+    iphone.goto(BASE)
+    for item in ALL:
+        tap(iphone, item)
+    iphone.locator("#undo").tap()
+    m = iphone.evaluate("""() => {
+        const l = document.getElementById('popList'), p = document.querySelector('.pop').getBoundingClientRect();
+        const ok = [...l.querySelectorAll('button')].every(b => {
+            const r = b.getBoundingClientRect(), li = b.parentElement.getBoundingClientRect();
+            return r.height >= 18 && r.top >= li.top - 0.5 && r.bottom <= li.bottom + 0.5;
+        });
+        return { rows: l.children.length, over: l.scrollHeight - l.clientHeight, bottom: p.bottom, vh: innerHeight, ok };
+    }""")
+    assert m["rows"] == len(ALL) and m["over"] <= 1 and m["bottom"] <= m["vh"] and m["ok"], m
+    iphone.get_by_role("button", name="Undo Get-up", exact=True).tap()
+    assert band(iphone, "getup") == "red"
 
 
 def test_history_persists_across_reload(desktop):
@@ -242,7 +311,7 @@ def test_history_heatmap_fills_the_screen(iphone):
 
 def test_toast_never_covers_tappable_items(iphone):
     iphone.goto(BASE)
-    iphone.locator('button[data-item="getup"]').tap()
+    iphone.evaluate("toast('Notifications are off in Settings')")  # the bell's messages
     expect(iphone.locator("#toast")).to_have_class(re.compile(r"\bshow\b"))
     iphone.wait_for_timeout(400)  # let the slide-in transition finish
     t = iphone.locator("#toast").bounding_box()
@@ -305,21 +374,22 @@ def test_desktop_day_change_previews_notification(desktop):
     desktop.goto(BASE)
     next_day(desktop)
     expect(desktop.locator("#notif")).to_have_class(re.compile(r"\bshow\b"))
-    assert banner(desktop)["Title"] == "🔴 18 red"
+    assert banner(desktop)["Title"] == "🔴 19 red"
     assert "preview" in banner(desktop)["Label"]
     desktop.click("#date", modifiers=["Shift"])
     for item in ALL:
         tap(desktop, item)
     assert desktop.evaluate("dailySummary(db.log, todayNum()).title") == "🟢 All green"
     next_day(desktop)  # max-4 items yellow, max-5 items green
-    assert banner(desktop)["Title"] == "🟡 11 turning yellow"
+    assert banner(desktop)["Title"] == "🟡 12 turning yellow"
     assert banner(desktop)["Body"].startswith("Neck, Shoulders")
     next_day(desktop)  # yellows are not mentioned once anything is orange
-    assert banner(desktop)["Title"] == "🟠 11 orange"
+    assert banner(desktop)["Title"] == "🟠 12 orange"
     next_day(desktop)
     b = banner(desktop)
-    assert b["Title"] == "🔴 11 red · 🟠 7 orange"
+    assert b["Title"] == "🔴 12 red · 🟠 7 orange"
     assert b["Body"].split("\n")[0].startswith("Red: Neck, Shoulders")
+    assert "Balance, Meditation" in b["Body"].split("\n")[0]
     assert b["Body"].split("\n")[1] == "Orange: Isometric Yoga, Push, Pull, Squat, Hinge, Loaded carry, Get-up"
 
 
@@ -337,7 +407,7 @@ def test_notification_fires_once_per_5am_and_5pm_slot(chromium, server):
     assert banner(page)["Title"] == ""  # nothing on first launch
     page.clock.run_for(3 * MINUTE)
     assert banner(page)["Label"] == "5:00 AM"
-    assert banner(page)["Title"] == "🔴 18 red"
+    assert banner(page)["Title"] == "🔴 19 red"
     for item in ALL:
         tap(page, item)
     page.clock.run_for(12 * 60 * MINUTE)  # past 17:00, same day
@@ -359,5 +429,5 @@ def test_system_notification_when_permission_granted(chromium_full, server):
     page.clock.run_for(3 * MINUTE)
     page.wait_for_function("navigator.serviceWorker.ready.then(r => r.getNotifications()).then(n => n.length > 0)")
     titles = page.evaluate("navigator.serviceWorker.ready.then(r => r.getNotifications()).then(n => n.map(x => x.title))")
-    assert titles == ["🔴 18 red"]
+    assert titles == ["🔴 19 red"]
     ctx.close()

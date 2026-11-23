@@ -33,8 +33,9 @@ const current = id => { const t = todayNum(); return itemHistory(id, t, t)[0]; }
 
 // ---- UI state ----
 let tab = 'today', toastTimer, bannerTimer;
-const undoStack = [];
 const $ = id => document.getElementById(id);
+// 2x2 Yoga & Mind grid: body on the left, mind on the right.
+const MIND_TILES = ['yoga', 'meditation', 'balance', 'daydream'];
 
 function bodySVG() {
   let s = `<svg class="body" viewBox="20 20 160 375" xmlns="http://www.w3.org/2000/svg">
@@ -77,8 +78,8 @@ function tile(id, cls, inner) {
 function todayPane() {
   return `<div class="row2">
       <section class="card"><h2>Mobility</h2>${bodySVG()}</section>
-      <section class="card"><h2>Yoga &amp; Mind</h2><div class="mind">${MIND.map(m =>
-        tile(m.id, `mt mt-${m.id}`, c => `${poseSVG(m.id, c)}<div class="nm">${m.short}</div>`)).join('')}</div></section>
+      <section class="card"><h2>Yoga &amp; Mind</h2><div class="mind">${MIND_TILES.map(id =>
+        tile(id, 'mt', c => `${poseSVG(id, c)}<div class="nm">${ITEM[id].short}</div>`)).join('')}</div></section>
     </div>
     <section class="card"><h2>Strength</h2>
       <div class="sgrid">${STRENGTH.map(f => tile(f.id, 'st', c => `${poseSVG(f.id, c)}<div class="nm">${f.name}</div>`)).join('')}</div>
@@ -98,7 +99,7 @@ function historyPane() {
     heatmap(g.ids, t, start)}</section>`).join('');
 }
 
-const TITLES = { today: 'Balance and Wellness', history: 'History' };
+const TITLES = { today: 'Wellness', history: 'History' };
 function render() {
   const t = todayNum();
   $('title').textContent = TITLES[tab];
@@ -110,14 +111,35 @@ function render() {
   const pane = (id, html) => `<div class="pane" id="pane-${id}"${tab === id ? '' : ' hidden'}>${html}</div>`;
   $('app').innerHTML = pane('today', todayPane()) + pane('history', historyPane());
   document.querySelectorAll('nav [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  $('undo').disabled = !logsOn(db.log, t).length;
+  if (!$('sheet').hidden) renderPop();
   renderBell();
   updateBadge();
 }
 
-function toast(msg, withUndo) {
+// ---- Undo popup: today's logs in the order they were made; any of them can be undone ----
+function renderPop() {
+  const logs = logsOn(db.log, todayNum());
+  if (!logs.length) { closePop(); return; }
+  $('popList').innerHTML = logs.map((e, i) => `<li><span>${ITEM[e.k].name}</span><button type="button" data-undo="${i}"
+    aria-label="Undo ${ITEM[e.k].name}">Undo</button></li>`).join('');
+}
+
+function openPop() {
+  $('sheet').hidden = false;
+  renderPop();
+  $('popClose').focus({ preventScroll: true });
+}
+
+function closePop() {
+  if ($('sheet').hidden) return;
+  $('sheet').hidden = true;
+  if (!$('undo').disabled) $('undo').focus({ preventScroll: true });
+}
+
+function toast(msg) {
   $('notif').classList.remove('show');
   $('toastMsg').textContent = msg;
-  $('undo').hidden = !withUndo;
   $('toast').classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => $('toast').classList.remove('show'), TOAST_MS);
@@ -167,45 +189,45 @@ function renderBell() {
 
 async function enableNotifications() {
   // iOS only exposes notifications to Home Screen web apps.
-  if (!('Notification' in window)) { toast('Add to Home Screen to get notifications', false); return; }
+  if (!('Notification' in window)) { toast('Add to Home Screen to get notifications'); return; }
   if (Notification.permission === 'default') await Notification.requestPermission();
   renderBell();
-  toast(canNotify() ? 'Notifications on (5 AM & 5 PM)' : 'Notifications are off in Settings', false);
+  toast(canNotify() ? 'Notifications on (5 AM & 5 PM)' : 'Notifications are off in Settings');
 }
 
 function logTap(id) {
   if (current(id).since === 0) return; // one tap per item per day
   const u = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
   db.log.push({ k: id, d: keyFromNum(todayNum()), u });
-  undoStack.push(u);
   save(); render();
-  toast(`Logged ${ITEM[id].name}`, true);
 }
 
-function undo() {
-  const u = undoStack.pop();
-  if (!u) return;
-  const e = db.log.find(x => x.u === u);
-  db.log = db.log.filter(x => x.u !== u);
+function undo(i) {
+  const e = logsOn(db.log, todayNum())[i];
+  if (!e) return;
+  db.log = db.log.filter(x => x !== e);
   save(); render();
-  toast(`Undone: ${ITEM[e.k].name}`, false);
 }
 
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab], [data-item], #undo, #date, #bell');
+  if (e.target.id === 'sheet') { closePop(); return; } // tap outside the popup
+  const t = e.target.closest('[data-tab], [data-item], [data-undo], #undo, #popClose, #date, #bell');
   if (!t) return;
   if (t.dataset.tab) { tab = t.dataset.tab; render(); }
   else if (t.dataset.item) logTap(t.dataset.item);
-  else if (t.id === 'undo') undo();
+  else if (t.dataset.undo) undo(Number(t.dataset.undo));
+  else if (t.id === 'undo') openPop();
+  else if (t.id === 'popClose') closePop();
   else if (t.id === 'bell') enableNotifications();
   else if (t.id === 'date' && SIM) {
     db.offset = e.shiftKey ? 0 : db.offset + 1;
     save(); render();
     if (db.offset) banner(dailySummary(db.log, todayNum()), `5:00 AM preview \u00b7 ${fmtDay(todayNum())}`);
-    else toast('Back to today', false);
+    else toast('Back to today');
   }
 });
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closePop(); return; }
   const t = e.target.closest && e.target.closest('svg [data-item]');
   if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); logTap(t.dataset.item); }
 });

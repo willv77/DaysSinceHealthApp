@@ -18,6 +18,7 @@ const STRENGTH = [
 ];
 const MIND = [
   { id: 'yoga', name: 'Isometric Yoga', short: 'Yoga', max: 5 },
+  { id: 'balance', name: 'Balance', short: 'Balance', max: 4 },
   { id: 'meditation', name: 'Meditation', short: 'Meditation', max: 4 },
   { id: 'daydream', name: 'Active Imagination', short: 'Active Imagination', max: 4 },
 ];
@@ -44,6 +45,8 @@ const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate(
 const dayNum = k => { const [y, m, d] = k.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 864e5); };
 const keyFromNum = n => new Date(n * 864e5).toISOString().slice(0, 10);
 const realToday = () => dayNum(keyOf(new Date()));
+// The log is append-only, so this is also the order the items were logged in.
+const logsOn = (log, n) => log.filter(e => e.d === keyFromNum(n));
 
 // ---- Scoring: replay the log one day at a time; a log sets the item's max, otherwise -1 per day ----
 const step = (s, tapped, max) => (tapped ? max : Math.max(0, s - 1));
